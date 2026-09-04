@@ -77,7 +77,7 @@ tbody tr:hover .col-idx,tbody tr:hover .col-name{background:#1a1f2e}
 <body>
 <div class="wrap">
 <h1>Quintessa Creative Performance Dashboard</h1>
-<div class="subtitle">All-Time Performance &mdash; Cost per Submitted Application (target $200) &mdash; Generated August 31, 2026</div>
+<div class="subtitle">All-Time Performance &mdash; Cost per Submitted Application (target $200) &mdash; Generated September 04, 2026</div>
 
 <div class="bi-tabs">
   <button class="bi-tab active" id="bi-tab-table" type="button">Performance Table</button>
@@ -88,7 +88,7 @@ tbody tr:hover .col-idx,tbody tr:hover .col-name{background:#1a1f2e}
   <div class="bi-batch">
     <div class="bi-batch-head">
       <span class="bi-batch-title">Batch Forecaster</span>
-      <span class="bi-batch-note">Creatives &amp; batches/week to sustain spend &middot; status-classifier winners &middot; safety margin over-produces creatives</span>
+      <span class="bi-batch-note">Creatives &amp; batches/week to sustain spend &middot; strategist statuses &middot; includes a safety margin</span>
     </div>
     <div class="bi-batch-controls">
       <label class="bi-ctl">Spend/day
@@ -450,6 +450,7 @@ table.awx-tbl{width:100%;border-collapse:collapse;background:#151922;border-radi
    awxRender();
  };
  function fmt(v,f){
+   if(v==null)return '\u2014';
    if(f==='money')return v?'$'+Math.round(v).toLocaleString():'\u2013';
    if(f==='int')return Math.round(v).toLocaleString();
    if(f==='x')return v?v.toFixed(2):'\u2013';
@@ -457,14 +458,21 @@ table.awx-tbl{width:100%;border-collapse:collapse;background:#151922;border-radi
    return v;
  }
  function cls(v,c){
+   if(v==null)return 'awx-muted';
    if(c.good===undefined)return '';
    if(v===0)return 'awx-muted';
    if(c.higher)return v>=c.good?'awx-tg-green':v>=c.warn?'awx-tg-yellow':'awx-tg-red';
    return v<=c.good?'awx-tg-green':v<=c.warn?'awx-tg-yellow':'awx-tg-red';
  }
+ function periodLabel(){
+   var s=document.querySelector('.subtitle');
+   if(!s)return 'All-Time';
+   var t=(s.textContent||'').split('—')[0].trim();
+   return t.replace(/\s+Performance$/,'')||'All-Time';
+ }
  function awxRender(){
    document.getElementById('awx-title').textContent=P.name+' \u2014 Awareness & Lead Type';
-   document.getElementById('awx-subtitle').textContent=P.labels[dim]+' \u00b7 All-Time \u00b7 '+seg+' ads';
+   document.getElementById('awx-subtitle').textContent=P.labels[dim]+' \u00b7 '+periodLabel()+' \u00b7 '+seg+' ads';
    document.getElementById('awx-legend').innerHTML=
      '<span class="awx-dot awx-g"></span>On target<span class="awx-dot awx-y"></span>Within 1.5\u00d7<span class="awx-dot awx-r"></span>Off target &nbsp;&nbsp; Targets: '+P.targets;
    var cov=P.coverage[dim];var pct=Math.round(100*cov.tagged/Math.max(cov.total,1));
@@ -477,10 +485,13 @@ table.awx-tbl{width:100%;border-collapse:collapse;background:#151922;border-radi
    document.getElementById('awx-tbody').innerHTML=order.map(function(l){
      var r=rows[l];if(!r||(r.Ads===0))return '';
      var tds='<td>'+l+'</td><td>'+r.Ads+'</td>'+cols.map(function(c){
-        var v=r[c.label];return '<td class="'+cls(v,c)+'">'+fmt(v,c.fmt)+'</td>';}).join('');
+        var v=r[c.label],known=(r.knownMetrics||{})[c.label];
+        if(v==null&&known>0)return '<td title="Recorded results; historical coverage is incomplete">'+fmt(known,c.fmt)+'<sup>*</sup></td>';
+        return '<td class="'+cls(v,c)+'">'+fmt(v,c.fmt)+'</td>';}).join('');
      return '<tr>'+tds+'</tr>';
    }).join('');
-   document.getElementById('awx-note').innerHTML='Awareness Level &amp; Lead Type joined from the 2.0 Creative Tracker to the Creative &amp; Copy Tracking Sheet performance tabs on CID. Unclassified = ads with no CID / dimension tag (mostly pre-switchover). All-time figures.';
+   document.getElementById('awx-note').innerHTML='Awareness Level &amp; Lead Type joined from the 2.0 Creative Tracker to the dashboard performance data on CID. Unclassified = ads with no CID / dimension tag (mostly pre-switchover). '+periodLabel()+' figures.';
+   if(Object.values(rows).some(function(r){return Object.values(r.knownMetrics||{}).some(function(v){return v>0;});}))document.getElementById('awx-note').innerHTML+=' * Recorded results from available data; historical coverage is incomplete. Cost-per-result is unavailable for incomplete totals.';
  }
 })();
 </script>
